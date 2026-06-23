@@ -8,14 +8,16 @@ Plateforme éditoriale de découverte de voyage, conçue pour devenir une réfé
 
 | Phase | Objet | Statut |
 |---|---|---|
-| **Phase 1** | Analyse & architecture complète | ✅ Livrée — **en attente de validation** |
-| Phase 2 | Design premium + stratégie SEO détaillée | ⏳ En attente Phase 1 |
-| Phase 3 | Développement (Next.js, TS, Prisma, PostgreSQL…) | ⏳ |
+| **Phase 1** | Analyse & architecture complète | ✅ Validée |
+| **Phase 2** | Design premium + stratégie SEO détaillée | ✅ Livrée — **en attente de validation** |
+| Phase 3 | Développement (Next.js, TS, Prisma, PostgreSQL…) | ⏳ En attente Phase 2 |
 | Phase 4 | Mise en production, optimisation, sécurité, audit | ⏳ |
 
 ## Documentation
 
 - 📄 **[Phase 1 — Analyse & Architecture complète](docs/PHASE-1-ARCHITECTURE.md)**
+- 🎨 **[Phase 2 — Design premium & UX](docs/PHASE-2-DESIGN.md)**
+- 🔍 **[Phase 2 — Stratégie SEO opérationnelle](docs/PHASE-2-SEO.md)**
 
 ## Stack cible (Phase 3)
 
@@ -31,4 +33,4 @@ Next.js (App Router) · React · TypeScript · Tailwind CSS · Prisma · Postgre
 
 ---
 
-➡️ **Prochaine étape : validation de la [Phase 1](docs/PHASE-1-ARCHITECTURE.md) avant de lancer la Phase 2.**
+➡️ **Prochaine étape : validation de la Phase 2 ([design](docs/PHASE-2-DESIGN.md) + [SEO](docs/PHASE-2-SEO.md)) avant de lancer la Phase 3 (développement).**
