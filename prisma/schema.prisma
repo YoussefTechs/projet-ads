@@ -1,0 +1,520 @@
+// ─────────────────────────────────────────────────────────────
+// Atlas — schéma de données (PostgreSQL via Prisma)
+// Domaines : géo & destinations · contenu éditorial · auth & users
+// · engagement (favoris, commentaires) · SEO système.
+// Réf. : docs/PHASE-1-ARCHITECTURE.md §20
+// ─────────────────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────────────────────── Enums ─────────────────────────────
+
+enum Role {
+  USER
+  EDITOR
+  ADMIN
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum ArticleType {
+  GUIDE // guide de voyage long-form
+  ITINERARY // itinéraire jour par jour
+  LISTICLE // top / liste
+  PRACTICAL // guide pratique (visa, budget…)
+  COMPARISON // comparatif éditorial
+  BLOG // article de blog
+  WHEN_TO_GO // quand partir
+  FAQ // page FAQ
+}
+
+enum PlaceType {
+  MONUMENT
+  MUSEUM
+  PARK
+  BEACH
+  VIEWPOINT
+  RELIGIOUS
+  HISTORIC
+  NATURE
+  ENTERTAINMENT
+  MARKET
+  OTHER
+}
+
+enum PriceRange {
+  BUDGET // €
+  MODERATE // €€
+  EXPENSIVE // €€€
+  LUXURY // €€€€
+}
+
+enum CategoryKind {
+  STYLE // style de voyage (famille, couple…)
+  TYPE // type de destination (plage, montagne…)
+  SEASON // saison / moment
+  BUDGET // budget
+}
+
+// Type d'entité pour les relations polymorphes (favoris, commentaires).
+enum EntityType {
+  COUNTRY
+  CITY
+  PLACE
+  HOTEL
+  RESTAURANT
+  ARTICLE
+}
+
+enum CommentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SPAM
+}
+
+enum SubscriberStatus {
+  PENDING
+  CONFIRMED
+  UNSUBSCRIBED
+}
+
+// ──────────────────────── Auth (NextAuth) ────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  role          Role      @default(USER)
+
+  // Profil auteur (E-E-A-T) — utilisé pour /auteurs/{slug}
+  slug      String? @unique
+  bio       String?
+  expertise String?
+
+  accounts Account[]
+  sessions Session[]
+  comments Comment[]
+  favorites Favorite[]
+  articles Article[] @relation("ArticleAuthor")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─────────────────────── Géo & destinations ──────────────────────
+
+model Continent {
+  id          String  @id @default(cuid())
+  name        String
+  slug        String  @unique
+  summary     String?
+  description String? @db.Text
+  heroImage   String?
+  latitude    Float?
+  longitude   Float?
+
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+  ogImage         String?
+
+  countries Country[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([slug])
+}
+
+model Country {
+  id          String  @id @default(cuid())
+  name        String
+  slug        String  @unique
+  continentId String
+  continent   Continent @relation(fields: [continentId], references: [id], onDelete: Cascade)
+
+  capital        String?
+  languages      String[]
+  currency       String?
+  timezones      String[]
+  population     Int?
+  area           Int?
+  callingCode    String?
+  powerPlug      String?
+  flagEmoji      String?
+  bestSeason     String?
+  climate        String?
+  safetyLevel    String?
+  visaSummary    String?  @db.Text
+  avgBudgetPerDay Int?
+  latitude       Float?
+  longitude      Float?
+
+  summary     String?
+  description String? @db.Text
+  heroImage   String?
+  gallery     String[]
+  rating      Float?
+  featured    Boolean @default(false)
+  status      ContentStatus @default(PUBLISHED)
+  publishedAt DateTime?
+
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+  ogImage         String?
+
+  regions     Region[]
+  cities      City[]
+  categories  Category[] @relation("CategoryCountries")
+  articles    Article[]  @relation("ArticleCountries")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([continentId])
+  @@index([status, featured])
+}
+
+model Region {
+  id          String  @id @default(cuid())
+  name        String
+  slug        String
+  countryId   String
+  country     Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  description String? @db.Text
+  heroImage   String?
+
+  cities City[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([countryId, slug])
+  @@index([countryId])
+}
+
+model City {
+  id        String  @id @default(cuid())
+  name      String
+  slug      String
+  countryId String
+  country   Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  regionId  String?
+  region    Region? @relation(fields: [regionId], references: [id], onDelete: SetNull)
+
+  latitude        Float?
+  longitude       Float?
+  population      Int?
+  bestSeason      String?
+  avgBudgetPerDay Int?
+  recommendedDays Int?
+  rating          Float?
+
+  summary     String?
+  description String? @db.Text
+  heroImage   String?
+  gallery     String[]
+  featured    Boolean @default(false)
+  status      ContentStatus @default(PUBLISHED)
+  publishedAt DateTime?
+
+  // Données climat (JSON) pour le composant "quand partir"
+  climate Json?
+
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+  ogImage         String?
+
+  places      Place[]
+  hotels      Hotel[]
+  restaurants Restaurant[]
+  categories  Category[] @relation("CategoryCities")
+  articles    Article[]  @relation("ArticleCities")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([countryId, slug])
+  @@index([countryId])
+  @@index([status, featured])
+  @@index([name])
+}
+
+model Place {
+  id     String    @id @default(cuid())
+  name   String
+  slug   String
+  cityId String
+  city   City      @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  type   PlaceType @default(OTHER)
+
+  latitude      Float?
+  longitude     Float?
+  openingHours  String?
+  priceInfo     String?
+  visitDuration String?
+  accessibility String?
+  officialUrl   String?
+  rating        Float?
+
+  summary     String?
+  description String? @db.Text
+  heroImage   String?
+  gallery     String[]
+  featured    Boolean @default(false)
+  status      ContentStatus @default(PUBLISHED)
+  publishedAt DateTime?
+
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+  ogImage         String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([cityId, slug])
+  @@index([cityId])
+  @@index([type])
+}
+
+model Hotel {
+  id     String @id @default(cuid())
+  name   String
+  slug   String
+  cityId String
+  city   City   @relation(fields: [cityId], references: [id], onDelete: Cascade)
+
+  stars        Int?
+  priceRange   PriceRange @default(MODERATE)
+  amenities    String[]
+  neighborhood String?
+  rating       Float?
+  affiliateUrl String?
+
+  summary     String?
+  description String? @db.Text
+  heroImage   String?
+  gallery     String[]
+  status      ContentStatus @default(PUBLISHED)
+
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+  ogImage         String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([cityId, slug])
+  @@index([cityId])
+}
+
+model Restaurant {
+  id     String @id @default(cuid())
+  name   String
+  slug   String
+  cityId String
+  city   City   @relation(fields: [cityId], references: [id], onDelete: Cascade)
+
+  cuisines     String[]
+  priceRange   PriceRange @default(MODERATE)
+  specialties  String[]
+  neighborhood String?
+  rating       Float?
+  affiliateUrl String?
+
+  summary     String?
+  description String? @db.Text
+  heroImage   String?
+  gallery     String[]
+  status      ContentStatus @default(PUBLISHED)
+
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+  ogImage         String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([cityId, slug])
+  @@index([cityId])
+}
+
+// ──────────────────────── Contenu éditorial ──────────────────────
+
+model Category {
+  id          String       @id @default(cuid())
+  name        String
+  slug        String       @unique
+  kind        CategoryKind @default(STYLE)
+  description String?      @db.Text
+  intro       String?      @db.Text
+  heroImage   String?
+
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+  ogImage         String?
+
+  countries Country[] @relation("CategoryCountries")
+  cities    City[]    @relation("CategoryCities")
+  articles  Article[] @relation("ArticleCategories")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([kind])
+}
+
+model Tag {
+  id       String    @id @default(cuid())
+  name     String
+  slug     String    @unique
+  articles Article[] @relation("ArticleTags")
+}
+
+model Article {
+  id      String      @id @default(cuid())
+  title   String
+  slug    String      @unique
+  type    ArticleType @default(GUIDE)
+  excerpt String?     @db.Text
+  content String      @db.Text
+
+  authorId String?
+  author   User?   @relation("ArticleAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+
+  coverImage  String?
+  readingTime Int?
+  featured    Boolean @default(false)
+  status      ContentStatus @default(PUBLISHED)
+  publishedAt DateTime?
+
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+  ogImage         String?
+
+  categories Category[] @relation("ArticleCategories")
+  tags       Tag[]      @relation("ArticleTags")
+  countries  Country[]  @relation("ArticleCountries")
+  cities     City[]     @relation("ArticleCities")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([type, status])
+  @@index([status, featured])
+  @@index([publishedAt])
+}
+
+// ───────────────────────────── Engagement ────────────────────────
+
+// Relation polymorphe : (entityType + entityId) — validée applicativement.
+model Favorite {
+  id         String     @id @default(cuid())
+  userId     String
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entityType EntityType
+  entityId   String
+  createdAt  DateTime   @default(now())
+
+  @@unique([userId, entityType, entityId])
+  @@index([userId])
+  @@index([entityType, entityId])
+}
+
+model Comment {
+  id         String        @id @default(cuid())
+  body       String        @db.Text
+  status     CommentStatus @default(PENDING)
+  entityType EntityType
+  entityId   String
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  // Fil de discussion (réponses)
+  parentId String?
+  parent   Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  Comment[] @relation("CommentReplies")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([entityType, entityId, status])
+  @@index([authorId])
+}
+
+// ───────────────────────── SEO / système ─────────────────────────
+
+model NewsletterSubscriber {
+  id          String           @id @default(cuid())
+  email       String           @unique
+  status      SubscriberStatus @default(PENDING)
+  locale      String           @default("fr")
+  confirmedAt DateTime?
+  createdAt   DateTime         @default(now())
+}
+
+// Redirections 301/302 gérées par l'admin (stabilité des URLs / SEO).
+model Redirect {
+  id         String   @id @default(cuid())
+  fromPath   String   @unique
+  toPath     String
+  statusCode Int      @default(301)
+  createdAt  DateTime @default(now())
+}
