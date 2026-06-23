@@ -1,0 +1,120 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ───────────── Tokens sémantiques (clair / sombre) ───────────── */
+@layer base {
+  :root {
+    --background: 0 0% 98%;
+    --foreground: 240 6% 6%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 6% 6%;
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;
+    --border: 240 6% 90%;
+    --input: 240 6% 88%;
+    --ring: 175 84% 32%;
+  }
+
+  .dark {
+    --background: 192 14% 5%;
+    --foreground: 240 6% 90%;
+    --card: 195 12% 9%;
+    --card-foreground: 240 6% 92%;
+    --muted: 200 10% 14%;
+    --muted-foreground: 240 5% 65%;
+    --border: 240 5% 22%;
+    --input: 240 5% 24%;
+    --ring: 172 66% 50%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-display;
+    text-wrap: balance;
+  }
+
+  /* Focus visible cohérent (accessibilité). */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  ::selection {
+    @apply bg-brand-200 text-brand-900;
+  }
+}
+
+/* ─────────────────── Typographie d'article (.prose) ───────────── */
+@layer components {
+  .prose {
+    @apply text-[1.0625rem] leading-[1.75] text-ink-700 dark:text-ink-300;
+  }
+  .prose h2 {
+    @apply mb-3 mt-10 text-2xl font-semibold text-foreground;
+  }
+  .prose h3 {
+    @apply mb-2 mt-8 text-xl font-semibold text-foreground;
+  }
+  .prose p {
+    @apply mb-5;
+  }
+  .prose ul {
+    @apply mb-5 ml-5 list-disc space-y-2;
+  }
+  .prose a {
+    @apply font-medium text-brand-700 underline-offset-2 hover:underline dark:text-brand-300;
+  }
+  .prose strong {
+    @apply font-semibold text-foreground;
+  }
+  .prose blockquote {
+    @apply my-6 border-l-4 border-brand-500 bg-muted/60 py-2 pl-4 italic;
+  }
+
+  /* Effet « shimmer » pour les skeletons. */
+  .skeleton {
+    @apply relative overflow-hidden bg-muted;
+  }
+  .skeleton::after {
+    @apply absolute inset-0 -translate-x-full;
+    content: "";
+    background: linear-gradient(
+      90deg,
+      transparent,
+      hsl(var(--foreground) / 0.06),
+      transparent
+    );
+    animation: shimmer 1.5s infinite;
+  }
+  @keyframes shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  /* Masque le contenu jusqu'au montage du thème (évite le flash). */
+  .container-page {
+    @apply container py-10 md:py-14;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

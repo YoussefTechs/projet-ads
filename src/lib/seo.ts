@@ -35,7 +35,9 @@ export function buildMetadata({
   authors,
   rawTitle = false,
 }: SeoParams): Metadata {
-  const fullTitle = rawTitle ? title : `${title} | ${siteConfig.name}`;
+  // Le suffixe « | Atlas » est ajouté par le template du layout racine
+  // (sauf rawTitle → titre absolu). OG/Twitter reçoivent le titre complet.
+  const brandedTitle = `${title} | ${siteConfig.name}`;
   const desc = description ?? siteConfig.description;
   const canonical = absoluteUrl(path);
   const ogImage = image
@@ -45,7 +47,7 @@ export function buildMetadata({
     : absoluteUrl(`/api/og?title=${encodeURIComponent(title)}`);
 
   return {
-    title: fullTitle,
+    title: rawTitle ? { absolute: title } : title,
     description: desc,
     alternates: { canonical },
     robots: noindex
@@ -57,7 +59,7 @@ export function buildMetadata({
           "max-snippet": -1,
         },
     openGraph: {
-      title: fullTitle,
+      title: rawTitle ? title : brandedTitle,
       description: desc,
       url: canonical,
       siteName: siteConfig.name,
@@ -70,7 +72,7 @@ export function buildMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title: fullTitle,
+      title: rawTitle ? title : brandedTitle,
       description: desc,
       images: [ogImage],
       site: siteConfig.twitter,

@@ -127,6 +127,26 @@ export function getRelatedArticles(
   });
 }
 
+/** Guides/articles liés à un pays (maillage interne). */
+export function getArticlesByCountry(countryId: string, take = 3) {
+  return prisma.article.findMany({
+    where: { ...PUBLISHED, countries: { some: { id: countryId } } },
+    orderBy: { publishedAt: "desc" },
+    take,
+    include: articleListInclude,
+  });
+}
+
+/** Guides/articles liés à une ville (maillage interne). */
+export function getArticlesByCity(cityId: string, take = 3) {
+  return prisma.article.findMany({
+    where: { ...PUBLISHED, cities: { some: { id: cityId } } },
+    orderBy: { publishedAt: "desc" },
+    take,
+    include: articleListInclude,
+  });
+}
+
 export async function getAllArticleParams(type: "blog" | "guide") {
   const articles = await prisma.article.findMany({
     where: {
