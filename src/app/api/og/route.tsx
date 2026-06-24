@@ -25,7 +25,7 @@ export async function GET(req: Request) {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", fontSize: 36, fontWeight: 600 }}>
-          ◎ {siteConfig.name}
+          {siteConfig.name}
         </div>
         <div style={{ display: "flex", fontSize: 64, fontWeight: 700, lineHeight: 1.1 }}>
           {title}
