@@ -156,6 +156,60 @@ export function touristAttractionSchema(d: DestinationSchemaInput & {
   };
 }
 
+export function lodgingSchema(h: {
+  name: string;
+  description?: string;
+  image?: string;
+  path: string;
+  priceRange?: string;
+  rating?: number | null;
+  city?: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "LodgingBusiness",
+    name: h.name,
+    description: h.description,
+    image: h.image,
+    url: absoluteUrl(h.path),
+    priceRange: h.priceRange,
+    address: h.city
+      ? { "@type": "PostalAddress", addressLocality: h.city }
+      : undefined,
+    aggregateRating: h.rating
+      ? { "@type": "AggregateRating", ratingValue: h.rating, bestRating: 5 }
+      : undefined,
+  };
+}
+
+export function restaurantSchema(r: {
+  name: string;
+  description?: string;
+  image?: string;
+  path: string;
+  priceRange?: string;
+  servesCuisine?: string[];
+  rating?: number | null;
+  city?: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Restaurant",
+    name: r.name,
+    description: r.description,
+    image: r.image,
+    url: absoluteUrl(r.path),
+    priceRange: r.priceRange,
+    servesCuisine: r.servesCuisine,
+    address: r.city
+      ? { "@type": "PostalAddress", addressLocality: r.city }
+      : undefined,
+    aggregateRating: r.rating
+      ? { "@type": "AggregateRating", ratingValue: r.rating, bestRating: 5 }
+      : undefined,
+  };
+}
+
 export function itemListSchema(items: { name: string; path: string }[]) {
   return {
     "@context": "https://schema.org",

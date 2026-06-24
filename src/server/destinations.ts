@@ -233,3 +233,23 @@ export async function getAllCityParams() {
 
 export type CityWithRelations = Prisma.PromiseReturnType<typeof getCity>;
 export type CountryWithRelations = Prisma.PromiseReturnType<typeof getCountry>;
+
+// ─────────────────────── Comparateurs ─────────────────────────
+
+/** Récupère une ville par son seul slug (pour les comparateurs). */
+export function getCityBySlug(slug: string) {
+  return prisma.city.findFirst({
+    where: { slug, ...PUBLISHED },
+    include: { country: { include: { continent: true } } },
+  });
+}
+
+/** Villes les mieux notées (suggestions de comparateurs). */
+export function getComparableCities(take = 10) {
+  return prisma.city.findMany({
+    where: PUBLISHED,
+    orderBy: { rating: "desc" },
+    take,
+    include: { country: { include: { continent: true } } },
+  });
+}
