@@ -55,4 +55,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   // Stratégie JWT requise pour le provider Credentials.
   session: { strategy: "jwt" },
   providers,
+  events: {
+    /**
+     * À la connexion, si l'e-mail correspond à ADMIN_EMAIL, on persiste le
+     * rôle ADMIN en base (l'administrateur principal n'a aucune action manuelle
+     * à effectuer).
+     */
+    async signIn({ user }) {
+      if (
+        user?.email &&
+        process.env.ADMIN_EMAIL &&
+        user.email === process.env.ADMIN_EMAIL
+      ) {
+        await prisma.user
+          .update({ where: { email: user.email }, data: { role: "ADMIN" } })
+          .catch(() => {});
+      }
+    },
+  },
 });

@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { draftMode } from "next/headers";
 import {
   Building2,
   Coins,
@@ -63,7 +64,8 @@ export default async function CountryPage({
   params: Promise<{ continent: string; country: string }>;
 }) {
   const { continent, country } = await params;
-  const data = await getCountry(continent, country);
+  const { isEnabled: preview } = await draftMode();
+  const data = await getCountry(continent, country, preview);
   if (!data) notFound();
 
   const [topPlaces, relatedArticles] = await Promise.all([
@@ -77,20 +79,27 @@ export default async function CountryPage({
     { name: data.name, path: paths.country(continent, country) },
   ];
 
-  const faqItems = [
-    {
-      question: `Quelle est la meilleure période pour visiter ${data.name} ?`,
-      answer: `La meilleure période pour visiter ${data.name} est ${(data.bestSeason ?? "le printemps et l'automne").toLowerCase()}.`,
-    },
-    {
-      question: `Quel budget prévoir pour un voyage en ${data.name} ?`,
-      answer: `Comptez en moyenne ${formatNumber(data.avgBudgetPerDay)} € par jour et par personne, hébergement, repas et activités compris.`,
-    },
-    {
-      question: `Faut-il un visa pour ${data.name} ?`,
-      answer: data.visaSummary ?? "Vérifiez les conditions de visa selon votre nationalité avant le départ.",
-    },
-  ];
+  const storedFaq =
+    (data.faq as { question: string; answer: string }[] | null) ?? [];
+  const faqItems =
+    storedFaq.length > 0
+      ? storedFaq
+      : [
+          {
+            question: `Quelle est la meilleure période pour visiter ${data.name} ?`,
+            answer: `La meilleure période pour visiter ${data.name} est ${(data.bestSeason ?? "le printemps et l'automne").toLowerCase()}.`,
+          },
+          {
+            question: `Quel budget prévoir pour un voyage en ${data.name} ?`,
+            answer: `Comptez en moyenne ${formatNumber(data.avgBudgetPerDay)} € par jour et par personne, hébergement, repas et activités compris.`,
+          },
+          {
+            question: `Faut-il un visa pour ${data.name} ?`,
+            answer:
+              data.visaSummary ??
+              "Vérifiez les conditions de visa selon votre nationalité avant le départ.",
+          },
+        ];
 
   return (
     <article>

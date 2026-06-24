@@ -24,7 +24,9 @@ enum Role {
 
 enum ContentStatus {
   DRAFT
+  PREVIEW
   PUBLISHED
+  UNPUBLISHED
 }
 
 enum ArticleType {
@@ -71,6 +73,7 @@ enum EntityType {
   COUNTRY
   CITY
   PLACE
+  ACTIVITY
   HOTEL
   RESTAURANT
   ARTICLE
@@ -167,6 +170,9 @@ model Continent {
   metaDescription String?
   ogImage         String?
 
+  // FAQ stockée : liste de { question, answer }
+  faq Json?
+
   countries Country[]
 
   createdAt DateTime @default(now())
@@ -212,6 +218,9 @@ model Country {
   metaTitle       String?
   metaDescription String?
   ogImage         String?
+
+  // FAQ stockée : liste de { question, answer }
+  faq Json?
 
   regions     Region[]
   cities      City[]
@@ -276,7 +285,11 @@ model City {
   metaDescription String?
   ogImage         String?
 
+  // FAQ stockée : liste de { question, answer }
+  faq Json?
+
   places      Place[]
+  activities  Activity[]
   hotels      Hotel[]
   restaurants Restaurant[]
   categories  Category[] @relation("CategoryCities")
@@ -321,6 +334,9 @@ model Place {
   metaDescription String?
   ogImage         String?
 
+  // FAQ stockée : liste de { question, answer }
+  faq Json?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -354,6 +370,9 @@ model Hotel {
   metaDescription String?
   ogImage         String?
 
+  // FAQ stockée : liste de { question, answer }
+  faq Json?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -386,6 +405,47 @@ model Restaurant {
   metaDescription String?
   ogImage         String?
 
+  // FAQ stockée : liste de { question, answer }
+  faq Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([cityId, slug])
+  @@index([cityId])
+}
+
+model Activity {
+  id     String @id @default(cuid())
+  name   String
+  slug   String
+  cityId String
+  city   City   @relation(fields: [cityId], references: [id], onDelete: Cascade)
+
+  category     String? // visite guidée, excursion, expérience…
+  duration     String?
+  priceInfo    String?
+  rating       Float?
+  latitude     Float?
+  longitude    Float?
+  affiliateUrl String?
+
+  summary     String?
+  description String? @db.Text
+  heroImage   String?
+  gallery     String[]
+  featured    Boolean       @default(false)
+  status      ContentStatus @default(PUBLISHED)
+  publishedAt DateTime?
+
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+  ogImage         String?
+
+  // FAQ stockée
+  faq Json?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -408,6 +468,9 @@ model Category {
   metaTitle       String?
   metaDescription String?
   ogImage         String?
+
+  // FAQ stockée : liste de { question, answer }
+  faq Json?
 
   countries Country[] @relation("CategoryCountries")
   cities    City[]    @relation("CategoryCities")
@@ -447,6 +510,9 @@ model Article {
   metaTitle       String?
   metaDescription String?
   ogImage         String?
+
+  // FAQ stockée : liste de { question, answer }
+  faq Json?
 
   categories Category[] @relation("ArticleCategories")
   tags       Tag[]      @relation("ArticleTags")

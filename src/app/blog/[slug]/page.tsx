@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { draftMode } from "next/headers";
 import { buildMetadata } from "@/lib/seo";
 import { paths } from "@/lib/url";
 import {
@@ -41,7 +42,8 @@ export default async function BlogDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const article = await getArticleBySlug(slug);
+  const { isEnabled: preview } = await draftMode();
+  const article = await getArticleBySlug(slug, preview);
   if (!article || article.type !== "BLOG") notFound();
 
   const [related, comments] = await Promise.all([

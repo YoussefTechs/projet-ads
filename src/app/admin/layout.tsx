@@ -22,7 +22,7 @@ export default async function AdminLayout({
           <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Administration
           </p>
-          <AdminNav />
+          <AdminNav role={session.user.role} />
         </aside>
         <div className="min-w-0">{children}</div>
       </div>

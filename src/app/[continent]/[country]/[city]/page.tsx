@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { draftMode } from "next/headers";
 import { CalendarDays, Coins, Clock, MapPin } from "lucide-react";
 import { buildMetadata } from "@/lib/seo";
 import { paths } from "@/lib/url";
@@ -67,7 +68,8 @@ export default async function CityPage({
   params: Promise<{ continent: string; country: string; city: string }>;
 }) {
   const { continent, country, city } = await params;
-  const data = await getCity(continent, country, city);
+  const { isEnabled: preview } = await draftMode();
+  const data = await getCity(continent, country, city, preview);
   if (!data) notFound();
 
   const [nearby, articles, comments] = await Promise.all([
@@ -85,20 +87,25 @@ export default async function CityPage({
     { name: data.name, path: paths.city(continent, country, city) },
   ];
 
-  const faqItems = [
-    {
-      question: `Combien de jours pour visiter ${data.name} ?`,
-      answer: `Nous conseillons environ ${data.recommendedDays ?? 3} jours pour profiter de ${data.name} et de ses environs.`,
-    },
-    {
-      question: `Quelle est la meilleure période pour visiter ${data.name} ?`,
-      answer: `La meilleure période est ${(data.bestSeason ?? "le printemps et l'automne").toLowerCase()}.`,
-    },
-    {
-      question: `Quel budget prévoir à ${data.name} ?`,
-      answer: `Comptez environ ${data.avgBudgetPerDay ?? 80} € par jour et par personne.`,
-    },
-  ];
+  const storedFaq =
+    (data.faq as { question: string; answer: string }[] | null) ?? [];
+  const faqItems =
+    storedFaq.length > 0
+      ? storedFaq
+      : [
+          {
+            question: `Combien de jours pour visiter ${data.name} ?`,
+            answer: `Nous conseillons environ ${data.recommendedDays ?? 3} jours pour profiter de ${data.name} et de ses environs.`,
+          },
+          {
+            question: `Quelle est la meilleure période pour visiter ${data.name} ?`,
+            answer: `La meilleure période est ${(data.bestSeason ?? "le printemps et l'automne").toLowerCase()}.`,
+          },
+          {
+            question: `Quel budget prévoir à ${data.name} ?`,
+            answer: `Comptez environ ${data.avgBudgetPerDay ?? 80} € par jour et par personne.`,
+          },
+        ];
 
   return (
     <article>
@@ -211,6 +218,28 @@ export default async function CityPage({
             ))}
           </div>
         </section>
+
+        {/* Activités */}
+        {data.activities.length > 0 && (
+          <section id="activites" className="mt-14 scroll-mt-32">
+            <SectionHeader title={`Activités à ${data.name}`} as="h2" />
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {data.activities.map((activity) => (
+                <EntityCard
+                  key={activity.id}
+                  href={paths.activity(continent, country, city, activity.slug)}
+                  title={activity.name}
+                  image={activity.heroImage}
+                  rating={activity.rating}
+                  meta={activity.duration ?? undefined}
+                  action={
+                    <FavoriteButton entityType="ACTIVITY" entityId={activity.id} />
+                  }
+                />
+              ))}
+            </div>
+          </section>
+        )}
 
         <AdSlot format="in-article" />
 

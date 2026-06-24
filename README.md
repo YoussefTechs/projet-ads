@@ -12,12 +12,24 @@ Plateforme éditoriale de découverte de voyage, **SEO-first** et monétisée pa
 | **Phase 2** | Design premium + stratégie SEO | ✅ Validée |
 | **Phase 3** | Développement (Next.js, TS, Prisma…) | ✅ Terminée |
 | **Phase 4** | Production, optimisation, sécurité, audit | ✅ Terminée |
+| **Phase 5** | Admin no-code, RBAC Google, IA, Activités, scalabilité | ✅ Terminée |
 
 ## Documentation
 
 - 📄 [Phase 1 — Architecture](docs/PHASE-1-ARCHITECTURE.md)
 - 🎨 [Phase 2 — Design](docs/PHASE-2-DESIGN.md) · 🔍 [Phase 2 — SEO](docs/PHASE-2-SEO.md)
 - 🚀 [Phase 4 — Production & audit](docs/PHASE-4-PRODUCTION.md)
+- 🛠️ [Phase 5 — Admin no-code & RBAC](docs/PHASE-5-ADMIN-CMS.md)
+
+## Administration (no-code)
+
+Toute la gestion de contenu se fait depuis `/admin`, **sans toucher au code** :
+
+1. Connectez-vous avec **Google** (l'e-mail défini par `ADMIN_EMAIL` devient **ADMIN** automatiquement) — ou en local avec `admin@atlas.test` / `Admin1234`.
+2. Ajoutez **Pays, Villes, Activités, Hôtels, Restaurants, Guides, Articles** via des formulaires complets (image, galerie, FAQ, SEO).
+3. **Générer avec l'IA**, puis **Publier** → page publique + SEO générés automatiquement.
+
+Rôles : **ADMIN** (tout), **EDITOR** (contenu), **USER** (site public). Accès non autorisé → `/403`.
 
 ## Fonctionnalités
 

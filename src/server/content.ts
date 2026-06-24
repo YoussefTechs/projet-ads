@@ -96,9 +96,9 @@ export function getLatestArticles(take = 6) {
   });
 }
 
-export async function getArticleBySlug(slug: string) {
+export async function getArticleBySlug(slug: string, preview = false) {
   return prisma.article.findFirst({
-    where: { slug, ...PUBLISHED },
+    where: { slug, ...(preview ? {} : PUBLISHED) },
     include: {
       author: true,
       categories: true,

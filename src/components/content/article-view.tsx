@@ -7,10 +7,11 @@ import { ArticleBody, extractHeadings } from "@/components/content/article-body"
 import { AuthorBox } from "@/components/content/author-box";
 import { ArticleCard } from "@/components/cards/article-card";
 import { SectionHeader } from "@/components/ui/section-header";
+import { Faq } from "@/components/ui/faq";
 import { AdSlot } from "@/components/ads/ad-slot";
 import { Comments, type CommentView } from "@/components/engagement/comments";
 import { JsonLd } from "@/components/seo/json-ld";
-import { articleSchema, breadcrumbSchema } from "@/lib/json-ld";
+import { articleSchema, breadcrumbSchema, faqSchema } from "@/lib/json-ld";
 
 interface ArticleViewProps {
   section: "guides" | "blog";
@@ -40,6 +41,7 @@ export function ArticleView({
   ];
 
   const headings = extractHeadings(article.content);
+  const faqItems: { question: string; answer: string }[] = article.faq ?? [];
 
   return (
     <article className="container py-10">
@@ -58,6 +60,7 @@ export function ArticleView({
               ? paths.author(article.author.slug)
               : undefined,
           }),
+          ...(faqItems.length ? [faqSchema(faqItems)] : []),
         ]}
       />
 
@@ -190,6 +193,14 @@ export function ArticleView({
           </div>
         </aside>
       </div>
+
+      {/* FAQ */}
+      {faqItems.length > 0 && (
+        <section className="mx-auto mt-12 max-w-3xl">
+          <SectionHeader title="Questions fréquentes" as="h2" />
+          <Faq items={faqItems} />
+        </section>
+      )}
 
       {/* Articles liés */}
       {related.length > 0 && (

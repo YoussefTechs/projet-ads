@@ -33,12 +33,16 @@ export async function getContinentBySlug(slug: string) {
 
 // ─────────────────────────── Pays ─────────────────────────────
 
-export async function getCountry(continentSlug: string, countrySlug: string) {
+export async function getCountry(
+  continentSlug: string,
+  countrySlug: string,
+  preview = false,
+) {
   return prisma.country.findFirst({
     where: {
       slug: countrySlug,
       continent: { slug: continentSlug },
-      ...PUBLISHED,
+      ...(preview ? {} : PUBLISHED),
     },
     include: {
       continent: true,
@@ -67,12 +71,13 @@ export async function getCity(
   continentSlug: string,
   countrySlug: string,
   citySlug: string,
+  preview = false,
 ) {
   return prisma.city.findFirst({
     where: {
       slug: citySlug,
       country: { slug: countrySlug, continent: { slug: continentSlug } },
-      ...PUBLISHED,
+      ...(preview ? {} : PUBLISHED),
     },
     include: {
       country: { include: { continent: true } },
@@ -81,6 +86,11 @@ export async function getCity(
         where: PUBLISHED,
         orderBy: [{ featured: "desc" }, { rating: "desc" }],
         take: 12,
+      },
+      activities: {
+        where: PUBLISHED,
+        orderBy: [{ featured: "desc" }, { rating: "desc" }],
+        take: 8,
       },
       hotels: {
         where: PUBLISHED,
@@ -92,7 +102,9 @@ export async function getCity(
         orderBy: { rating: "desc" },
         take: 6,
       },
-      _count: { select: { places: true, hotels: true, restaurants: true } },
+      _count: {
+        select: { places: true, activities: true, hotels: true, restaurants: true },
+      },
     },
   });
 }
@@ -182,6 +194,36 @@ export async function getRestaurant(
 }
 
 // ─────────────────── Sélections (accueil, etc.) ───────────────
+
+// ─────────────────────────── Activités ────────────────────────
+
+export function getActivitiesByCity(cityId: string, take = 8) {
+  return prisma.activity.findMany({
+    where: { cityId, ...PUBLISHED },
+    orderBy: [{ featured: "desc" }, { rating: "desc" }],
+    take,
+  });
+}
+
+export async function getActivity(
+  continentSlug: string,
+  countrySlug: string,
+  citySlug: string,
+  activitySlug: string,
+  preview = false,
+) {
+  return prisma.activity.findFirst({
+    where: {
+      slug: activitySlug,
+      city: {
+        slug: citySlug,
+        country: { slug: countrySlug, continent: { slug: continentSlug } },
+      },
+      ...(preview ? {} : PUBLISHED),
+    },
+    include: { city: { include: { country: { include: { continent: true } } } } },
+  });
+}
 
 export function getFeaturedCountries(take = 8) {
   return prisma.country.findMany({

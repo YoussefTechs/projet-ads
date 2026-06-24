@@ -37,6 +37,7 @@ async function main() {
   await prisma.tag.deleteMany();
   await prisma.category.deleteMany();
   await prisma.place.deleteMany();
+  await prisma.activity.deleteMany();
   await prisma.hotel.deleteMany();
   await prisma.restaurant.deleteMany();
   await prisma.city.deleteMany();
@@ -521,6 +522,16 @@ async function main() {
           heroImage: img(`city-${city.slug}`, 1600, 900),
           gallery: [img(`${city.slug}-g1`), img(`${city.slug}-g2`), img(`${city.slug}-g3`)],
           climate: climateSample,
+          faq: [
+            {
+              question: `Combien de jours pour visiter ${city.name} ?`,
+              answer: `Comptez 3 à 4 jours pour profiter pleinement de ${city.name}.`,
+            },
+            {
+              question: `Où loger à ${city.name} ?`,
+              answer: `Le centre-ville est idéal pour rester proche des principaux sites.`,
+            },
+          ],
           summary: `${city.name} est une destination incontournable de ${country.name}.`,
           description: `Découvrez ${city.name}, l'une des villes phares de ${country.name}. Entre monuments, gastronomie et ambiance unique, ${city.name} mérite au moins ${3} jours de visite.`,
           status: "PUBLISHED",
@@ -619,6 +630,42 @@ async function main() {
             summary: `Une table créative à ${city.name}.`,
             description: `Le Bistrot Moderne revisite les classiques avec une touche contemporaine.`,
             status: "PUBLISHED",
+          },
+        ],
+      });
+
+      await prisma.activity.createMany({
+        data: [
+          {
+            name: `Visite guidée de ${city.name}`,
+            slug: `visite-guidee-${city.slug}`,
+            cityId: createdCity.id,
+            category: "Visite guidée",
+            duration: "3 heures",
+            priceInfo: "À partir de 25 €",
+            rating: 4.6,
+            heroImage: img(`activity-${city.slug}-1`, 1200, 800),
+            gallery: [img(`act-${city.slug}-1a`), img(`act-${city.slug}-1b`)],
+            summary: `Découvrez ${city.name} à pied avec un guide local.`,
+            description: `Une visite guidée pour explorer les incontournables de ${city.name} et son histoire.`,
+            featured: true,
+            status: "PUBLISHED",
+            publishedAt: new Date(),
+          },
+          {
+            name: `Excursion d'une journée près de ${city.name}`,
+            slug: `excursion-${city.slug}`,
+            cityId: createdCity.id,
+            category: "Excursion",
+            duration: "1 journée",
+            priceInfo: "À partir de 60 €",
+            rating: 4.4,
+            heroImage: img(`activity-${city.slug}-2`, 1200, 800),
+            gallery: [img(`act-${city.slug}-2a`)],
+            summary: `Une excursion inoubliable depuis ${city.name}.`,
+            description: `Évadez-vous le temps d'une journée pour explorer les environs de ${city.name}.`,
+            status: "PUBLISHED",
+            publishedAt: new Date(),
           },
         ],
       });

@@ -11,6 +11,9 @@ export type SearchResultType =
   | "country"
   | "city"
   | "place"
+  | "activity"
+  | "hotel"
+  | "restaurant"
   | "article";
 
 export interface SearchResult {
@@ -33,7 +36,18 @@ export async function instantSearch(
   const query = q.trim();
   if (query.length < 2) return [];
 
-  const [countries, cities, places, articles] = await Promise.all([
+  const cityInclude = {
+    city: {
+      select: {
+        name: true,
+        slug: true,
+        country: { select: { slug: true, continent: { select: { slug: true } } } },
+      },
+    },
+  };
+
+  const [countries, cities, places, activities, hotels, restaurants, articles] =
+    await Promise.all([
     prisma.country.findMany({
       where: { name: { contains: query, mode: insensitive }, ...PUBLISHED },
       take: perType,
@@ -62,6 +76,21 @@ export async function instantSearch(
           },
         },
       },
+    }),
+    prisma.activity.findMany({
+      where: { name: { contains: query, mode: insensitive }, ...PUBLISHED },
+      take: perType,
+      include: cityInclude,
+    }),
+    prisma.hotel.findMany({
+      where: { name: { contains: query, mode: insensitive }, ...PUBLISHED },
+      take: perType,
+      include: cityInclude,
+    }),
+    prisma.restaurant.findMany({
+      where: { name: { contains: query, mode: insensitive }, ...PUBLISHED },
+      take: perType,
+      include: cityInclude,
     }),
     prisma.article.findMany({
       where: { title: { contains: query, mode: insensitive }, ...PUBLISHED },
@@ -98,6 +127,45 @@ export async function instantSearch(
         p.slug,
       ),
       image: p.heroImage,
+    })),
+    ...activities.map((a) => ({
+      id: a.id,
+      type: "activity" as const,
+      name: a.name,
+      subtitle: a.city.name,
+      href: paths.activity(
+        a.city.country.continent.slug,
+        a.city.country.slug,
+        a.city.slug,
+        a.slug,
+      ),
+      image: a.heroImage,
+    })),
+    ...hotels.map((h) => ({
+      id: h.id,
+      type: "hotel" as const,
+      name: h.name,
+      subtitle: h.city.name,
+      href: paths.hotel(
+        h.city.country.continent.slug,
+        h.city.country.slug,
+        h.city.slug,
+        h.slug,
+      ),
+      image: h.heroImage,
+    })),
+    ...restaurants.map((r) => ({
+      id: r.id,
+      type: "restaurant" as const,
+      name: r.name,
+      subtitle: r.city.name,
+      href: paths.restaurant(
+        r.city.country.continent.slug,
+        r.city.country.slug,
+        r.city.slug,
+        r.slug,
+      ),
+      image: r.heroImage,
     })),
     ...articles.map((a) => ({
       id: a.id,

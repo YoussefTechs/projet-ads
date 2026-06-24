@@ -19,6 +19,12 @@ export const paths = {
     `/${continent}/${country}/${city}`,
   place: (continent: string, country: string, city: string, place: string) =>
     `/${continent}/${country}/${city}/lieux/${place}`,
+  activity: (
+    continent: string,
+    country: string,
+    city: string,
+    activity: string,
+  ) => `/${continent}/${country}/${city}/activites/${activity}`,
   hotel: (continent: string, country: string, city: string, hotel: string) =>
     `/${continent}/${country}/${city}/hotels/${hotel}`,
   restaurant: (

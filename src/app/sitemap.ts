@@ -33,7 +33,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   try {
-    const [continents, countries, cities, places, articles, categories] =
+    const [continents, countries, cities, places, activities, articles, categories] =
       await Promise.all([
         prisma.continent.findMany({ select: { slug: true, updatedAt: true } }),
         prisma.country.findMany({
@@ -55,6 +55,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           },
         }),
         prisma.place.findMany({
+          where: PUBLISHED,
+          select: {
+            slug: true,
+            updatedAt: true,
+            city: {
+              select: {
+                slug: true,
+                country: {
+                  select: { slug: true, continent: { select: { slug: true } } },
+                },
+              },
+            },
+          },
+        }),
+        prisma.activity.findMany({
           where: PUBLISHED,
           select: {
             slug: true,
@@ -104,6 +119,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           ),
         ),
         lastModified: p.updatedAt,
+        priority: 0.6,
+      })),
+      ...activities.map((a) => ({
+        url: absoluteUrl(
+          paths.activity(
+            a.city.country.continent.slug,
+            a.city.country.slug,
+            a.city.slug,
+            a.slug,
+          ),
+        ),
+        lastModified: a.updatedAt,
         priority: 0.6,
       })),
       ...articles.map((a) => ({
