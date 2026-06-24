@@ -7,6 +7,7 @@ import { siteConfig } from "@/config/site";
 import { Providers } from "@/components/providers";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
+import { CookieConsent } from "@/components/cookie-consent";
 import { JsonLd } from "@/components/seo/json-ld";
 import { organizationSchema, websiteSchema } from "@/lib/json-ld";
 
@@ -63,6 +64,7 @@ export default function RootLayout({
           <Header />
           <main id="main">{children}</main>
           <Footer />
+          <CookieConsent />
         </Providers>
 
         <JsonLd data={[organizationSchema(), websiteSchema()]} />

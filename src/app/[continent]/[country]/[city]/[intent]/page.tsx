@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { Coins, Bed, Utensils, Bus, Ticket } from "lucide-react";
+import { Bed, Utensils, Bus, Ticket } from "lucide-react";
 import { buildMetadata } from "@/lib/seo";
 import { paths } from "@/lib/url";
 import { CITY_INTENTS } from "@/config/site";
