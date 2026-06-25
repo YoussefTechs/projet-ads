@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Sparkles, Plus, Trash2, Eye, ExternalLink } from "lucide-react";
 import type { Field, Resource } from "@/lib/admin/resources";
 import { STATUS_OPTIONS } from "@/lib/admin/resources";
 import type { ResourceOptions } from "@/server/admin-data";
-import { saveResource, deleteResource } from "@/server/admin-actions";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 
@@ -30,9 +30,9 @@ export function ResourceForm({
   options: ResourceOptions;
   publicPath: string | null;
 }) {
+  const router = useRouter();
   const id: string | null = record?.id ?? null;
 
-  // État contrôlé pour permettre le pré-remplissage par l'IA.
   const initial: Record<string, string | boolean> = {};
   const initialFaq: FaqRow[] = (record?.faq as FaqRow[]) ?? [];
   const initialCats: string[] =
@@ -53,9 +53,57 @@ export function ResourceForm({
   const [faq, setFaq] = useState<FaqRow[]>(initialFaq);
   const [cats, setCats] = useState<string[]>(initialCats);
   const [aiLoading, setAiLoading] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
   const set = (name: string, value: string | boolean) =>
     setValues((v) => ({ ...v, [name]: value }));
+
+  async function submit(intent: string) {
+    setBusy(intent);
+    setError("");
+    try {
+      const res = await fetch("/api/admin/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          resource: resource.key,
+          id,
+          intent,
+          values: { ...values, categories: cats, faq },
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        router.push(data.redirect ?? `/admin/${resource.key}`);
+        router.refresh();
+      } else {
+        setError(data.error ?? "Erreur lors de l'enregistrement.");
+        setBusy(null);
+      }
+    } catch {
+      setError("Erreur réseau.");
+      setBusy(null);
+    }
+  }
+
+  async function remove() {
+    if (!confirm("Supprimer définitivement cet élément ?")) return;
+    setBusy("delete");
+    const res = await fetch("/api/admin/delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ resource: resource.key, id }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      router.push(data.redirect ?? `/admin/${resource.key}`);
+      router.refresh();
+    } else {
+      setError(data.error ?? "Erreur lors de la suppression.");
+      setBusy(null);
+    }
+  }
 
   async function generateWithAI() {
     setAiLoading(true);
@@ -66,7 +114,6 @@ export function ResourceForm({
         body: JSON.stringify({
           resource: resource.key,
           name: values[resource.titleField] ?? "",
-          context: values["countryId"] || values["cityId"] || "",
         }),
       });
       const data = await res.json();
@@ -101,13 +148,13 @@ export function ResourceForm({
                 <label
                   key={opt.value}
                   className={`cursor-pointer rounded-full border px-3 py-1.5 text-sm ${
-                    checked ? "border-brand-600 bg-brand-50 text-brand-700" : "border-border"
+                    checked
+                      ? "border-brand-600 bg-brand-50 text-brand-700"
+                      : "border-border"
                   }`}
                 >
                   <input
                     type="checkbox"
-                    name={field.name}
-                    value={opt.value}
                     checked={checked}
                     onChange={(e) =>
                       setCats((c) =>
@@ -134,7 +181,6 @@ export function ResourceForm({
       return (
         <fieldset key={field.name} className="md:col-span-2">
           <Label>{field.label}</Label>
-          <input type="hidden" name="faq" value={JSON.stringify(faq)} />
           <div className="space-y-3">
             {faq.map((row, i) => (
               <div key={i} className="rounded-lg border border-border p-3">
@@ -144,7 +190,9 @@ export function ResourceForm({
                   value={row.question}
                   onChange={(e) =>
                     setFaq((f) =>
-                      f.map((r, j) => (j === i ? { ...r, question: e.target.value } : r)),
+                      f.map((r, j) =>
+                        j === i ? { ...r, question: e.target.value } : r,
+                      ),
                     )
                   }
                 />
@@ -155,7 +203,9 @@ export function ResourceForm({
                   value={row.answer}
                   onChange={(e) =>
                     setFaq((f) =>
-                      f.map((r, j) => (j === i ? { ...r, answer: e.target.value } : r)),
+                      f.map((r, j) =>
+                        j === i ? { ...r, answer: e.target.value } : r,
+                      ),
                     )
                   }
                 />
@@ -181,19 +231,18 @@ export function ResourceForm({
     }
 
     const colSpan = field.fullWidth ? "md:col-span-2" : "";
-    const common = { id: field.name, name: field.name };
 
     return (
       <div key={field.name} className={colSpan}>
         <Label htmlFor={field.name}>
-          {field.label} {field.required && <span className="text-red-600">*</span>}
+          {field.label}{" "}
+          {field.required && <span className="text-red-600">*</span>}
         </Label>
 
         {field.type === "textarea" && (
           <textarea
-            {...common}
+            id={field.name}
             rows={3}
-            required={field.required}
             className={inputCls}
             value={values[field.name] as string}
             onChange={(e) => set(field.name, e.target.value)}
@@ -201,9 +250,8 @@ export function ResourceForm({
         )}
         {field.type === "richtext" && (
           <textarea
-            {...common}
+            id={field.name}
             rows={10}
-            required={field.required}
             className={`${inputCls} font-mono`}
             value={values[field.name] as string}
             onChange={(e) => set(field.name, e.target.value)}
@@ -211,7 +259,7 @@ export function ResourceForm({
         )}
         {(field.type === "gallery" || field.type === "stringlist") && (
           <textarea
-            {...common}
+            id={field.name}
             rows={3}
             className={inputCls}
             value={values[field.name] as string}
@@ -220,16 +268,15 @@ export function ResourceForm({
         )}
         {(field.type === "select" || field.type === "belongsTo") && (
           <select
-            {...common}
-            required={field.required}
+            id={field.name}
             className={inputCls}
             value={values[field.name] as string}
             onChange={(e) => set(field.name, e.target.value)}
           >
             <option value="">— Choisir —</option>
             {(field.type === "select"
-              ? field.options ?? []
-              : options.belongsTo[field.name] ?? []
+              ? (field.options ?? [])
+              : (options.belongsTo[field.name] ?? [])
             ).map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
@@ -241,7 +288,6 @@ export function ResourceForm({
           <label className="mt-1 flex items-center gap-2 text-sm">
             <input
               type="checkbox"
-              name={field.name}
               checked={Boolean(values[field.name])}
               onChange={(e) => set(field.name, e.target.checked)}
               className="h-4 w-4"
@@ -251,9 +297,8 @@ export function ResourceForm({
         )}
         {["text", "slug", "image", "number", "tags"].includes(field.type) && (
           <Input
-            {...common}
+            id={field.name}
             type={field.type === "number" ? "number" : "text"}
-            required={field.required}
             value={values[field.name] as string}
             onChange={(e) => set(field.name, e.target.value)}
           />
@@ -281,7 +326,7 @@ export function ResourceForm({
   ];
 
   return (
-    <form action={saveResource.bind(null, resource.key, id)}>
+    <div>
       {groups.map((group) => {
         const fields = byGroup(group.key);
         if (fields.length === 0) return null;
@@ -295,21 +340,33 @@ export function ResourceForm({
         );
       })}
 
-      {/* Barre d'actions */}
+      {error && (
+        <p role="alert" className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700">
+          {error}
+        </p>
+      )}
+
       <div className="sticky bottom-0 flex flex-wrap items-center gap-3 border-t border-border bg-background/95 py-4 backdrop-blur">
-        <Button type="submit" name="intent" value="publish">
+        <Button onClick={() => submit("publish")} loading={busy === "publish"}>
           Publier
         </Button>
-        <Button type="submit" name="intent" value="draft" variant="outline">
+        <Button
+          variant="outline"
+          onClick={() => submit("draft")}
+          loading={busy === "draft"}
+        >
           Enregistrer le brouillon
         </Button>
         {id && (
-          <Button type="submit" name="intent" value="unpublish" variant="ghost">
+          <Button
+            variant="ghost"
+            onClick={() => submit("unpublish")}
+            loading={busy === "unpublish"}
+          >
             Dépublier
           </Button>
         )}
         <Button
-          type="button"
           variant="secondary"
           onClick={generateWithAI}
           loading={aiLoading}
@@ -348,24 +405,16 @@ export function ResourceForm({
       )}
 
       {id && (
-        <DeleteButton resourceKey={resource.key} id={id} />
+        <div className="mt-6 border-t border-border pt-6">
+          <button
+            onClick={remove}
+            disabled={busy === "delete"}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-red-600 hover:underline disabled:opacity-50"
+          >
+            <Trash2 size={15} /> Supprimer
+          </button>
+        </div>
       )}
-    </form>
-  );
-}
-
-function DeleteButton({ resourceKey, id }: { resourceKey: string; id: string }) {
-  return (
-    <span className="mt-6 block border-t border-border pt-6">
-      <button
-        formAction={deleteResource.bind(null, resourceKey, id)}
-        onClick={(e) => {
-          if (!confirm("Supprimer définitivement cet élément ?")) e.preventDefault();
-        }}
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-red-600 hover:underline"
-      >
-        <Trash2 size={15} /> Supprimer
-      </button>
-    </span>
+    </div>
   );
 }

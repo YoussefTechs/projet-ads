@@ -7,6 +7,8 @@
     "node": ">=18.18.0"
   },
   "scripts": {
+    "setup": "node scripts/setup-env.mjs && prisma generate && prisma db push && tsx prisma/seed.ts",
+    "predev": "node scripts/setup-env.mjs",
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
@@ -14,7 +16,6 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio"

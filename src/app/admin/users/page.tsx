@@ -1,8 +1,7 @@
 import { prisma } from "@/lib/db";
 import { requireAdminAccess } from "@/server/admin-data";
-import { updateUserRole } from "@/server/admin-actions";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { UserRoleSelect } from "@/components/admin/user-role-select";
 import { formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -53,23 +52,7 @@ export default async function AdminUsersPage() {
                         Admin principal
                       </span>
                     ) : (
-                      <form
-                        action={updateUserRole.bind(null, u.id)}
-                        className="flex items-center gap-2"
-                      >
-                        <select
-                          name="role"
-                          defaultValue={u.role}
-                          className="rounded-md border border-input bg-card px-2 py-1.5 text-sm"
-                        >
-                          <option value="USER">USER</option>
-                          <option value="EDITOR">EDITOR</option>
-                          <option value="ADMIN">ADMIN</option>
-                        </select>
-                        <Button type="submit" size="sm" variant="outline">
-                          OK
-                        </Button>
-                      </form>
+                      <UserRoleSelect userId={u.id} role={u.role} />
                     )}
                   </td>
                 </tr>

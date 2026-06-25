@@ -7,7 +7,7 @@ import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input, Label, FieldError } from "@/components/ui/input";
 
-export function LoginForm() {
+export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -33,19 +33,22 @@ export function LoginForm() {
 
   return (
     <div>
-      <Button
-        type="button"
-        variant="outline"
-        className="w-full"
-        onClick={() => signIn("google", { callbackUrl: "/compte" })}
-      >
-        Continuer avec Google
-      </Button>
-
-      <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
-        <span className="h-px flex-1 bg-border" /> ou{" "}
-        <span className="h-px flex-1 bg-border" />
-      </div>
+      {googleEnabled && (
+        <>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            onClick={() => signIn("google", { callbackUrl: "/compte" })}
+          >
+            Continuer avec Google
+          </Button>
+          <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
+            <span className="h-px flex-1 bg-border" /> ou{" "}
+            <span className="h-px flex-1 bg-border" />
+          </div>
+        </>
+      )}
 
       <form onSubmit={onSubmit} className="space-y-4">
         <div>

@@ -24,7 +24,11 @@ export default function LoginPage() {
         </>
       }
     >
-      <LoginForm />
+      <LoginForm
+        googleEnabled={Boolean(
+          process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET,
+        )}
+      />
     </AuthShell>
   );
 }
